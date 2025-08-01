@@ -1,2 +1,2 @@
-# apartments_management
+# apartments-management
 Nástroj pro správu hostů
