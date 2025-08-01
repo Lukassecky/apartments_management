@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Správa hostů a reporty</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+
+        .guests-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .guests-table th,
+        .guests-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .guests-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+        }
+
+        .guests-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .search-filter {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-filter input,
+        .search-filter select {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #fff, #f8f9fa);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .report-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nationality-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .nationality-tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-filter {
+                flex-direction: column;
+            }
+
+            .search-filter input,
+            .search-filter select {
+                min-width: auto;
+            }
+
+            .guests-table {
+                font-size: 14px;
+            }
+
+            .guests-table th,
+            .guests-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏨 Správa hostů a reporty</h1>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('add-guest')">➕ Přidat hosta</button>
+            <button class="tab" onclick="showTab('guest-list')">📋 Seznam hostů</button>
+            <button class="tab" onclick="showTab('reports')">📊 Reporty</button>
+        </div>
+
+        <!-- Přidání hosta -->
+        <div id="add-guest" class="tab-content active">
+            <form id="guest-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="firstName">Jméno *</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Příjmení *</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Telefon</label>
+                        <input type="tel" id="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="nationality">Národnost</label>
+                        <select id="nationality">
+                            <option value="">Vyberte národnost</option>
+                            <option value="CZ">Česká republika</option>
+                            <option value="SK">Slovensko</option>
+                            <option value="DE">Německo</option>
+                            <option value="AT">Rakousko</option>
+                            <option value="PL">Polsko</option>
+                            <option value="HU">Maďarsko</option>
+                            <option value="FR">Francie</option>
+                            <option value="IT">Itálie</option>
+                            <option value="ES">Španělsko</option>
+                            <option value="NL">Nizozemsko</option>
+                            <option value="BE">Belgie</option>
+                            <option value="CH">Švýcarsko</option>
+                            <option value="US">USA</option>
+                            <option value="GB">Velká Británie</option>
+                            <option value="RU">Rusko</option>
+                            <option value="CN">Čína</option>
+                            <option value="JP">Japonsko</option>
+                            <option value="KR">Jižní Korea</option>
+                            <option value="other">Jiná</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="checkIn">Datum příjezdu *</label>
+                        <input type="date" id="checkIn" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="checkOut">Datum odjezdu *</label>
+                        <input type="date" id="checkOut" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="roomNumber">Číslo pokoje</label>
+                        <input type="text" id="roomNumber">
+                    </div>
+                    <div class="form-group">
+                        <label for="adults">Počet dospělých</label>
+                        <input type="number" id="adults" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="children">Počet dětí</label>
+                        <input type="number" id="children" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Cena za pobyt (Kč)</label>
+                        <input type="number" id="price" min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Poznámky</label>
+                        <textarea id="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn">💾 Uložit hosta</button>
+            </form>
+        </div>
+
+        <!-- Seznam hostů -->
+        <div id="guest-list" class="tab-content">
+            <div class="search-filter">
+                <input type="text" id="searchInput" placeholder="🔍 Hledat podle jména, emailu nebo pokoje...">
+                <select id="nationalityFilter">
+                    <option value="">Všechny národnosti</option>
+                </select>
+                <select id="statusFilter">
+                    <option value="">Všechny stavy</option>
+                    <option value="current">Aktuálně ubytovaní</option>
+                    <option value="upcoming">Budoucí rezervace</option>
+                    <option value="past">Minulé pobyty</option>
+                </select>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn" onclick="exportToCSV()">📊 Export do CSV</button>
+                <button class="btn btn-secondary" onclick="clearAllData()">🗑️ Vymazat všechna data</button>
+            </div>
+
+            <table class="guests-table" id="guestsTable">
+                <thead>
+                    <tr>
+                        <th>Jméno</th>
+                        <th>Email</th>
+                        <th>Národnost</th>
+                        <th>Příjezd</th>
+                        <th>Odjezd</th>
+                        <th>Pokoj</th>
+                        <th>Hosté</th>
+                        <th>Cena</th>
+                        <th>Stav</th>
+                        <th>Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="guestsTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Reporty -->
+        <div id="reports" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalGuests">0</div>
+                    <div class="stat-label">Celkem hostů</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="currentGuests">0</div>
+                    <div class="stat-label">Aktuálně ubytovaní</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRevenue">0</div>
+                    <div class="stat-label">Celkové tržby (Kč)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgStay">0</div>
+                    <div class="stat-label">Průměrná délka pobytu (dní)</div>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h3>📊 Obsazenost podle měsíců</h3>
+                <div id="monthlyChart" class="chart-container">
+                    <div class="no-data">Zatím nejsou k dispozici žádná data pro vytvoření grafu</div>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h3>🌍 Nejčastější národnosti</h3>
+                <div id="nationalityStats">
+                    <div class="no-data">Zatím nejsou k dispozici žádná data o národnostech</div>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <h3>💰 Finanční přehled</h3>
+                <div id="financialStats">
+                    <div class="no-data">Zatím nejsou k dispozici žádná finanční data</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let guests = JSON.parse(localStorage.getItem('hotelGuests')) || [];
+
+        // Načtení dat při startu
+        document.addEventListener('DOMContentLoaded', function() {
+            updateGuestsList();
+            updateReports();
+            updateNationalityFilter();
+        });
+
+        // Přepínání tabů
+        function showTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'reports') {
+                updateReports();
+            }
+        }
+
+        // Přidání hosta
+        document.getElementById('guest-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const guest = {
+                id: Date.now(),
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                nationality: document.getElementById('nationality').value,
+                checkIn: document.getElementById('checkIn').value,
+                checkOut: document.getElementById('checkOut').value,
+                roomNumber: document.getElementById('roomNumber').value,
+                adults: parseInt(document.getElementById('adults').value) || 1,
+                children: parseInt(document.getElementById('children').value) || 0,
+                price: parseFloat(document.getElementById('price').value) || 0,
+                notes: document.getElementById('notes').value,
+                createdAt: new Date().toISOString()
+            };
+
+            // Validace dat
+            if (new Date(guest.checkIn) >= new Date(guest.checkOut)) {
+                alert('Datum odjezdu musí být po datu příjezdu!');
+                return;
+            }
+
+            guests.push(guest);
+            localStorage.setItem('hotelGuests', JSON.stringify(guests));
+            
+            // Reset formuláře
+            e.target.reset();
+            
+            // Přepnutí na seznam hostů
+            showTab('guest-list');
+            updateGuestsList();
+            updateNationalityFilter();
+            
+            alert('Host byl úspěšně přidán!');
+        });
+
+        // Aktualizace seznamu hostů
+        function updateGuestsList() {
+            const tbody = document.getElementById('guestsTableBody');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const nationalityFilter = document.getElementById('nationalityFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let filteredGuests = guests.filter(guest => {
+                const matchesSearch = !searchTerm || 
+                    guest.firstName.toLowerCase().includes(searchTerm) ||
+                    guest.lastName.toLowerCase().includes(searchTerm) ||
+                    guest.email.toLowerCase().includes(searchTerm) ||
+                    guest.roomNumber.toLowerCase().includes(searchTerm);
+                
+                const matchesNationality = !nationalityFilter || guest.nationality === nationalityFilter;
+                
+                let matchesStatus = true;
+                if (statusFilter) {
+                    const today = new Date();
+                    const checkIn = new Date(guest.checkIn);
+                    const checkOut = new Date(guest.checkOut);
+                    
+                    switch(statusFilter) {
+                        case 'current':
+                            matchesStatus = checkIn <= today && checkOut >= today;
+                            break;
+                        case 'upcoming':
+                            matchesStatus = checkIn > today;
+                            break;
+                        case 'past':
+                            matchesStatus = checkOut < today;
+                            break;
+                    }
+                }
+                
+                return matchesSearch && matchesNationality && matchesStatus;
+            });
+
+            tbody.innerHTML = '';
+            
+            filteredGuests.forEach(guest => {
+                const row = document.createElement('tr');
+                const status = getGuestStatus(guest);
+                const statusColor = status === 'Aktuálně' ? '#28a745' : status === 'Budoucí' ? '#007bff' : '#6c757d';
+                
+                row.innerHTML = `
+                    <td><strong>${guest.firstName} ${guest.lastName}</strong></td>
+                    <td>${guest.email}</td>
+                    <td>${getNationalityName(guest.nationality)}</td>
+                    <td>${formatDate(guest.checkIn)}</td>
+                    <td>${formatDate(guest.checkOut)}</td>
+                    <td>${guest.roomNumber}</td>
+                    <td>${guest.adults + guest.children} (${guest.adults}+${guest.children})</td>
+                    <td>${guest.price.toLocaleString()} Kč</td>
+                    <td><span style="color: ${statusColor}; font-weight: bold;">${status}</span></td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteGuest(${guest.id})" style="padding: 5px 10px; font-size: 12px;">
+                            🗑️ Smazat
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (filteredGuests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">Žádní hosté nevyhovují zadaným kritériům</td></tr>';
+            }
+        }
+
+        // Získání stavu hosta
+        function getGuestStatus(guest) {
+            const today = new Date();
+            const checkIn = new Date(guest.checkIn);
+            const checkOut = new Date(guest.checkOut);
+            
+            if (checkIn <= today && checkOut >= today) {
+                return 'Aktuálně';
+            } else if (checkIn > today) {
+                return 'Budoucí';
+            } else {
+                return 'Minulý';
+            }
+        }
+
+        // Formátování data
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('cs-CZ');
+        }
+
+        // Získání názvu národnosti
+        function getNationalityName(code) {
+            const nationalities = {
+                'CZ': 'Česká republika',
+                'SK': 'Slovensko',
+                'DE': 'Německo',
+                'AT': 'Rakousko',
+                'PL': 'Polsko',
+                'HU': 'Maďarsko',
+                'FR': 'Francie',
+                'IT': 'Itálie',
+                'ES': 'Španělsko',
+                'NL': 'Nizozemsko',
+                'BE': 'Belgie',
+                'CH': 'Švýcarsko',
+                'US': 'USA',
+                'GB': 'Velká Británie',
+                'RU': 'Rusko',
+                'CN': 'Čína',
+                'JP': 'Japonsko',
+                'KR': 'Jižní Korea',
+                'other': 'Jiná'
+            };
+            return nationalities[code] || code;
+        }
+
+        // Aktualizace filtru národností
+        function updateNationalityFilter() {
+            const select = document.getElementById('nationalityFilter');
+            const nationalities = [...new Set(guests.map(g => g.nationality).filter(n => n))];
+            
+            select.innerHTML = '<option value="">Všechny národnosti</option>';
+            nationalities.forEach(nat => {
+                const option = document.createElement('option');
+                option.value = nat;
+                option.textContent = getNationalityName(nat);
+                select.appendChild(option);
+            });
+        }
+
+        // Smazání hosta
+        function deleteGuest(id) {
+            if (confirm('Opravdu chcete smazat tohoto hosta?')) {
+                guests = guests.filter(g => g.id !== id);
+                localStorage.setItem('hotelGuests', JSON.stringify(guests));
+                updateGuestsList();
+                updateReports();
+                updateNationalityFilter();
+            }
+        }
+
+        // Aktualizace reportů
+        function updateReports() {
+            // Základní statistiky
+            const totalGuests = guests.length;
+            const currentGuests = guests.filter(g => getGuestStatus(g) === 'Aktuálně').length;
+            const totalRevenue = guests.reduce((sum, g) => sum + g.price, 0);
+            const avgStay = guests.length > 0 ? 
+                guests.reduce((sum, g) => {
+                    const days = (new Date(g.checkOut) - new Date(g.checkIn)) / (1000 * 60 * 60 * 24);
+                    return sum + days;
+                }, 0) / guests.length : 0;
+
+            document.getElementById('totalGuests').textContent = totalGuests;
+            document.getElementById('currentGuests').textContent = currentGuests;
+            document.getElementById('totalRevenue').textContent = totalRevenue.toLocaleString();
+            document.getElementById('avgStay').textContent = Math.round(avgStay * 10) / 10;
+
+            // Statistiky národností
+            updateNationalityStats();
+            
+            // Finanční statistiky
+            updateFinancialStats();
+        }
+
+        // Aktualizace statistik národností
+        function updateNationalityStats() {
+            const nationalityStats = {};
+            guests.forEach(guest => {
+                if (guest.nationality) {
+                    nationalityStats[guest.nationality] = (nationalityStats[guest.nationality] || 0) + 1;
+                }
+            });
+
+            const container = document.getElementById('nationalityStats');
+            
+            if (Object.keys(nationalityStats).length === 0) {
+                container.innerHTML = '<div class="no-data">Zatím nejsou k dispozici žádná data o národnostech</div>';
+                return;
+            }
+
+            const sorted = Object.entries(nationalityStats)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+
+            container.innerHTML = `
+                <div class="nationality-list">
+                    ${sorted.map(([code, count]) => 
+                        `<div class="nationality-tag">${getNationalityName(code)}: ${count}</div>`
+                    ).join('')}
+                </div>
+            `;
+        }
+
+        // Aktualizace finančních statistik
+        function updateFinancialStats() {
+            const container = document.getElementById('financialStats');
+            
+            if (guests.length === 0) {
+                container.innerHTML = '<div class="no-data">Zatím nejsou k dispozici žádná finanční data</div>';
+                return;
+            }
+
+            const totalRevenue = guests.reduce((sum, g) => sum + g.price, 0);
+            const avgPrice = totalRevenue / guests.length;
+            const maxPrice = Math.max(...guests.map(g => g.price));
+            const minPrice = Math.min(...guests.map(g => g.price));
+
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${totalRevenue.toLocaleString()}</div>
+                        <div class="stat-label">Celkové tržby (Kč)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${Math.round(avgPrice).toLocaleString()}</div>
+                        <div class="stat-label">Průměrná cena (Kč)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${maxPrice.toLocaleString()}</div>
+                        <div class="stat-label">Nejvyšší cena (Kč)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${minPrice.toLocaleString()}</div>
+                        <div class="stat-label">Nejnižší cena (Kč)</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Export do CSV
+        function exportToCSV() {
+            if (guests.length === 0) {
+                alert('Žádná data k exportu!');
+                return;
+            }
+
+            const headers = ['Jméno', 'Příjmení', 'Email', 'Telefon', 'Národnost', 'Příjezd', 'Odjezd', 'Pokoj', 'Dospělí', 'Děti', 'Cena', 'Poznámky'];
+            const csvContent = [
+                headers.join(';'),
+                ...guests.map(guest => [
+                    guest.firstName,
+                    guest.lastName,
+                    guest.email,
+                    guest.phone,
+                    getNationalityName(guest.nationality),
+                    formatDate(guest.checkIn),
+                    formatDate(guest.checkOut),
+                    guest.roomNumber,
+                    guest.adults,
+                    guest.children,
+                    guest.price,
+                    guest.notes.replace(/[\r\n;]/g, ' ')
+                ].join(';'))
+            ].join('\n');
+
+            const blob = new Blob
